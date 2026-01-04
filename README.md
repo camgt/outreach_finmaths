@@ -1,14 +1,47 @@
-# Financial Mathematics Educational App
+---
+title: Math Finance Playground
+emoji: 📊
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+license: mit
+---
 
-Interactive mini-games to illustrate financial mathematics concepts for a general audience.
+# 📊 Math Finance Playground
 
-## Features
+Interactive mini-games to explore financial mathematics concepts through hands-on experience.
 
-### 🎲 Kelly Criterion Game
-Learn optimal investment strategies through interactive betting simulations. Compare Kelly optimal betting vs fixed percentage and over-betting strategies.
+## 🎮 Available Games
 
-### 📈 Guess the Real Series
-Can you distinguish real market data from synthetic stochastic processes? Test your intuition about market randomness and learn about stochastic price behavior.
+1. **📈 Guess the Real Series** - Can you distinguish real market data from synthetic stochastic processes?
+2. **🎲 Kelly Criterion** - Learn optimal betting strategies and risk management
+3. **🛠️ Static Replication** - Build exotic option payoffs using vanilla calls
+
+## 🚀 Features
+
+- Interactive visualizations with Plotly
+- Real historical market data from multiple crisis and stability periods
+- Educational explanations of mathematical concepts
+- Mobile-friendly design for tablets
+
+## 📚 Technologies
+
+- Python 3.11
+- Streamlit
+- Plotly
+- NumPy, Pandas, SciPy
+
+## 👨‍💼 Created By
+
+**Camilo García Trillos** (UCL)  
+With assistance from Anthropic's Claude Sonnet 4.5
+
+## 📄 License
+
+MIT License - Educational use only
+
+Market data provided by Yahoo Finance
 
 ## Installation
 
