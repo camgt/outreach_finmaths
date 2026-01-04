@@ -88,38 +88,44 @@ def generate_random_scenario(scenario_type):
 
 # Sidebar controls
 with st.sidebar:
-    st.header("🎮 Game Controls")
+    st.header("🎮 Game Info")
     
-    if not st.session_state.game_started:
-        st.markdown("#### 🎯 Choose Scenario Type")
-        scenario_type = st.selectbox(
-            "Select a scenario to explore:",
-            ["Low Risk/Low Reward", "Balanced", "High Risk/High Reward", 
-             "Asymmetric Advantage", "Marginal Edge"],
-            help="Each scenario has different risk/reward characteristics. Try them all to build intuition!"
-        )
-        
-        if st.button("🎲 Start Game", type="primary", use_container_width=True):
-            st.session_state.game_started = True
-            st.session_state.game_params = generate_random_scenario(scenario_type)
-            st.session_state.simulation_run = False
-            st.rerun()
-    else:
-        if st.button("🔄 New Scenario", use_container_width=True):
+    if st.session_state.game_started:
+        st.info("🎲 Game in progress!")
+        st.markdown("---")
+        if st.button("↩️ Restart & Change Scenario", use_container_width=True):
             st.session_state.game_started = False
             st.session_state.game_params = None
             st.session_state.simulation_run = False
             st.rerun()
-        
-        st.markdown("---")
-        
-        if not st.session_state.simulation_run:
-            st.info("💡 Enter your betting strategy below and click 'Run Simulation'")
-        else:
-            st.success("✅ Simulation complete!")
+    else:
+        st.info("💡 Configure your scenario in the main area, then start the game!")
 
 # Main game area
 if not st.session_state.game_started:
+    # Game configuration
+    st.markdown("### 🎮 Game Configuration")
+    
+    scenario_type = st.selectbox(
+        "🎯 Select a Scenario Type:",
+        ["Low Risk/Low Reward", "Balanced", "High Risk/High Reward", 
+         "Asymmetric Advantage", "Marginal Edge"],
+        help="Each scenario has different risk/reward characteristics. Try them all to build intuition!"
+    )
+    
+    st.markdown("")
+    
+    # Start Game button in main area
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🎲 Start Game", type="primary", use_container_width=True, key="start_kelly_main"):
+            st.session_state.game_started = True
+            st.session_state.game_params = generate_random_scenario(scenario_type)
+            st.session_state.simulation_run = False
+            st.rerun()
+    
+    st.markdown("---")
+    
     # Instructions before game starts
     st.info("""
     ### 🎯 How to Play:
@@ -162,6 +168,17 @@ if not st.session_state.game_started:
         """)
 
 else:
+    # New Scenario button in main area
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🔄 New Scenario", use_container_width=True, key="new_scenario_main"):
+            st.session_state.game_started = False
+            st.session_state.game_params = None
+            st.session_state.simulation_run = False
+            st.rerun()
+    
+    st.markdown("---")
+    
     # Game is active - show scenario and get user input
     params = st.session_state.game_params
     

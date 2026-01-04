@@ -72,42 +72,19 @@ if 'difficulty' not in st.session_state:
 
 # Sidebar - Game Setup
 with st.sidebar:
-    st.header("🎮 Game Settings")
+    st.header("🎮 Game Info")
     
-    difficulty = st.radio(
-        "Difficulty Level",
-        ["Easy", "Hard"],
-        help="""
-        **Easy**: Obvious differences between real and synthetic data
-        **Hard**: Matched volatility makes them harder to distinguish
-        """
-    )
-    
-    st.session_state.difficulty = difficulty
-    
-    num_charts = st.slider(
-        "Number of Charts",
-        min_value=3,
-        max_value=4,
-        value=3,
-        help="How many time series to compare"
-    )
-    
-    st.markdown("---")
-    
-    if not st.session_state.game_started:
-        if st.button("🎲 Start New Game", type="primary", use_container_width=True):
-            st.session_state.game_started = True
-            st.session_state.revealed = False
-            st.session_state.user_guesses = {}
-            st.rerun()
-    else:
-        if st.button("🔄 New Game", use_container_width=True):
+    if st.session_state.game_started:
+        st.info("📊 Game in progress!")
+        st.markdown("---")
+        if st.button("↩️ Restart & Change Settings", use_container_width=True):
             st.session_state.game_started = False
             st.session_state.game_data = None
             st.session_state.user_guesses = {}
             st.session_state.revealed = False
             st.rerun()
+    else:
+        st.info("💡 Configure your game settings in the main area, then start playing!")
 
 def generate_game_data(num_charts, difficulty):
     """Generate a mix of real and synthetic time series."""
@@ -218,6 +195,46 @@ def generate_game_data(num_charts, difficulty):
 
 # Main game logic
 if not st.session_state.game_started:
+    # Game configuration
+    st.markdown("### 🎮 Game Configuration")
+    
+    config_col1, config_col2 = st.columns(2)
+    
+    with config_col1:
+        difficulty = st.radio(
+            "Difficulty Level",
+            ["Easy", "Hard"],
+            help="""
+            **Easy**: Obvious differences between real and synthetic data  
+            **Hard**: Matched volatility makes them harder to distinguish
+            """,
+            horizontal=True
+        )
+        st.session_state.difficulty = difficulty
+    
+    with config_col2:
+        num_charts = st.slider(
+            "Number of Charts",
+            min_value=3,
+            max_value=4,
+            value=3,
+            help="How many time series to compare"
+        )
+    
+    st.markdown("")
+    
+    # Start Game button in main area
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🎲 Start New Game", type="primary", use_container_width=True, key="start_main"):
+            st.session_state.game_started = True
+            st.session_state.revealed = False
+            st.session_state.user_guesses = {}
+            st.session_state.num_charts = num_charts  # Store in session
+            st.rerun()
+    
+    st.markdown("---")
+    
     # Instructions
     st.info("""
     ### 🎯 How to Play:
@@ -259,8 +276,23 @@ if not st.session_state.game_started:
         """)
 
 else:
+    # New Game button in main area
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🔄 New Game", use_container_width=True, key="new_game_main"):
+            st.session_state.game_started = False
+            st.session_state.game_data = None
+            st.session_state.user_guesses = {}
+            st.session_state.revealed = False
+            st.rerun()
+    
+    st.markdown("---")
+    
     # Generate game data if not exists
     if st.session_state.game_data is None:
+        # Get num_charts from session state or use default
+        num_charts = st.session_state.get('num_charts', 3)
+        difficulty = st.session_state.get('difficulty', 'Easy')
         with st.spinner("Generating time series..."):
             st.session_state.game_data = generate_game_data(num_charts, difficulty)
     

@@ -217,101 +217,117 @@ else:
     
     # Sidebar: Level selection
     st.sidebar.header("📚 Workshop Levels")
-    
-    levels = {
-        1: {
-            'name': 'Butterfly Spread',
-            'payoff_type': 'butterfly',
-            'strikes': [90, 95, 100, 105, 110],
-            'difficulty': 'Beginner',
-            'hint': 'This one only needs calls at different strikes. You\'ll need positive and negative quantities to create the peak.',
-            'mode': 'interactive',
-            'allow_stock': False
-        },
-        2: {
-            'name': 'Long Strangle', 
-            'payoff_type': 'strangle',
-            'strikes': [90, 95, 100, 105, 110],
-            'difficulty': 'Intermediate',
-            'hint': 'Try combining the stock with call options. Think about what happens when the stock moves far from $100 in either direction.',
-            'mode': 'interactive',
-            'allow_stock': True
-        },
-        3: {
-            'name': 'Power Call (Demonstration)',
-            'payoff_type': 'power_call',
-            'strikes': list(range(85, 121, 2)),  # Every $2
-            'difficulty': 'Demo',
-            'hint': 'Watch how adding more strikes progressively improves the approximation.',
-            'mode': 'animation',
-            'allow_stock': False
-        }
+# Define levels dictionary (outside sidebar so it's accessible everywhere)
+levels = {
+    1: {
+        'name': 'Butterfly Spread',
+        'payoff_type': 'butterfly',
+        'strikes': [90, 95, 100, 105, 110],
+        'difficulty': 'Beginner',
+        'hint': 'This one only needs calls at different strikes. You\'ll need positive and negative quantities to create the peak.',
+        'mode': 'interactive',
+        'allow_stock': False
+    },
+    2: {
+        'name': 'Long Strangle', 
+        'payoff_type': 'strangle',
+        'strikes': [90, 95, 100, 105, 110],
+        'difficulty': 'Intermediate',
+        'hint': 'Try combining the stock with call options. Think about what happens when the stock moves far from $100 in either direction.',
+        'mode': 'interactive',
+        'allow_stock': True
+    },
+    3: {
+        'name': 'Power Call (Demonstration)',
+        'payoff_type': 'power_call',
+        'strikes': list(range(85, 121, 2)),  # Every $2
+        'difficulty': 'Demo',
+        'hint': 'Watch how adding more strikes progressively improves the approximation.',
+        'mode': 'animation',
+        'allow_stock': False
     }
+}
+
+# Sidebar
+with st.sidebar:
+    st.header("🎮 Game Info")
+    current_level = levels[st.session_state.rep_level]
+    st.info(f"🎯 Current: Level {st.session_state.rep_level}\n{current_level['name']}")
+    st.markdown("---")
+    if st.button("↩️ Change Level", use_container_width=True, key="change_level_sidebar"):
+        # Scroll to top by rerunning
+        st.rerun()
+
+# Level selection in main area
+st.markdown("### 🎮 Select a Level")
+
+level_col1, level_col2, level_col3 = st.columns(3)
+
+for idx, (level_id, level_data) in enumerate(levels.items()):
+    if level_data['difficulty'] == 'Beginner':
+        difficulty_emoji = "🟢"
+    elif level_data['difficulty'] == 'Intermediate':
+        difficulty_emoji = "🟡"
+    elif level_data['difficulty'] == 'Advanced':
+        difficulty_emoji = "🔴"
+    else:
+        difficulty_emoji = "🎬"
     
-    for level_id, level_data in levels.items():
-        if level_data['difficulty'] == 'Beginner':
-            difficulty_emoji = "🟢"
-        elif level_data['difficulty'] == 'Intermediate':
-            difficulty_emoji = "🟡"
-        elif level_data['difficulty'] == 'Advanced':
-            difficulty_emoji = "🔴"
-        else:
-            difficulty_emoji = "🎬"
-        
-        if st.sidebar.button(
-            f"{difficulty_emoji} Level {level_id}: {level_data['name']}", 
+    level_col = [level_col1, level_col2, level_col3][idx]
+    with level_col:
+        button_label = f"{difficulty_emoji} Level {level_id}\n{level_data['name']}"
+        if st.button(
+            button_label,
             use_container_width=True,
-            type="primary" if st.session_state.rep_level == level_id else "secondary"
+            type="primary" if st.session_state.rep_level == level_id else "secondary",
+            key=f"level_{level_id}_main"
         ):
             st.session_state.rep_level = level_id
             st.session_state.rep_show_solution = False
             st.rerun()
+
+st.markdown("---")
+
+# Current level
+current_level = levels[st.session_state.rep_level]
+
+# Header
+col1, col2, col3 = st.columns([2, 1, 1])
+with col1:
+    st.subheader(f"Level {st.session_state.rep_level}: {current_level['name']}")
+with col2:
+    st.metric("Difficulty", current_level['difficulty'])
+with col3:
+    st.metric("Available Strikes", len(current_level['strikes']))
+
+# Option description
+option_info = get_option_description(current_level['payoff_type'])
+
+with st.expander("ℹ️ About This Option", expanded=True):
+    st.markdown(f"**{option_info['name']}**")
+    st.markdown(option_info['description'])
+    st.info(f"**Real Market Use:** {option_info['use_case']}")
+
+st.markdown("---")
+
+# Setup stock price grid
+S = np.linspace(70, 130, 300)
+
+# Get target payoff
+params = {'K': 100, 'K1': 90, 'K2': 110, 'Km': 100}
+target_payoff = get_named_payoff(current_level['payoff_type'], S, params)
+
+# Check if this is animation mode
+if current_level['mode'] == 'animation':
+    # Animation mode - demonstrate progressive approximation
+    st.markdown("### 🎬 Watch How It Works")
+    st.info("This level demonstrates how using more strikes creates a better approximation. Use the slider to see the progression.")
     
-    st.sidebar.markdown("---")
-    if st.sidebar.button("🏠 Back to Home", use_container_width=True):
-        st.session_state.rep_game_started = False
-        st.rerun()
+    strikes = current_level['strikes']
     
-    # Current level
-    current_level = levels[st.session_state.rep_level]
-    
-    # Header
-    col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
-        st.subheader(f"Level {st.session_state.rep_level}: {current_level['name']}")
-    with col2:
-        st.metric("Difficulty", current_level['difficulty'])
-    with col3:
-        st.metric("Available Strikes", len(current_level['strikes']))
-    
-    # Option description
-    option_info = get_option_description(current_level['payoff_type'])
-    
-    with st.expander("ℹ️ About This Option", expanded=True):
-        st.markdown(f"**{option_info['name']}**")
-        st.markdown(option_info['description'])
-        st.info(f"**Real Market Use:** {option_info['use_case']}")
-    
-    st.markdown("---")
-    
-    # Setup stock price grid
-    S = np.linspace(70, 130, 300)
-    
-    # Get target payoff
-    params = {'K': 100, 'K1': 90, 'K2': 110, 'Km': 100}
-    target_payoff = get_named_payoff(current_level['payoff_type'], S, params)
-    
-    # Check if this is animation mode
-    if current_level['mode'] == 'animation':
-        # Animation mode - demonstrate progressive approximation
-        st.markdown("### 🎬 Watch How It Works")
-        st.info("This level demonstrates how using more strikes creates a better approximation. Use the slider to see the progression.")
-        
-        strikes = current_level['strikes']
-        
-        # Slider to control how many strikes to use
-        n_strikes_to_use = st.slider(
-            "Number of strikes to use in replication:",
+    # Slider to control how many strikes to use
+    n_strikes_to_use = st.slider(
+        "Number of strikes to use in replication:",
             min_value=3,
             max_value=len(strikes),
             value=5,
@@ -319,284 +335,273 @@ else:
             key="animation_slider"
         )
         
-        # Use subset of strikes
-        active_strikes = strikes[:n_strikes_to_use]
-        
-        # Compute optimal replication for this subset
-        optimal_weights = compute_static_replication(
-            target_payoff, S, active_strikes, option_type='call'
-        )
-        
-        user_positions = [
-            {'type': 'call', 'K': K, 'q': optimal_weights[K]} 
-            for K in active_strikes
-        ]
-        
-        st.markdown(f"**Using {n_strikes_to_use} strikes:** {active_strikes[:3]}...{active_strikes[-1] if len(active_strikes) > 3 else ''}")
-        
-    else:
-        # Interactive mode - user adjusts quantities
-        st.markdown("### 🔧 Build Your Replicating Portfolio")
-        
-        with st.expander("💡 Hint", expanded=False):
-            st.markdown(current_level['hint'])
-        
-        # Create columns for strike inputs
-        strikes = current_level['strikes']
-        n_strikes = len(strikes)
-        allow_stock = current_level.get('allow_stock', False)
-        
-        user_positions = []
-        
-        if allow_stock:
-            # Add stock and cash position inputs first
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("#### 💵 Cash Position")
-                cash_qty = st.slider(
-                    "Cash Amount ($)",
-                    min_value=-200.0,
-                    max_value=200.0,
-                    value=0.0,
-                    step=10.0,
-                    key=f"cash_level_{st.session_state.rep_level}",
-                    help="Add or subtract a constant amount to the entire payoff"
-                )
-                st.caption(f"${cash_qty:.0f}")
-                if cash_qty != 0:
-                    user_positions.append({'type': 'cash', 'K': 0, 'q': cash_qty})
-            
-            with col2:
-                st.markdown("#### 📊 Stock Position")
-                stock_qty = st.slider(
-                    "Quantity of Stock",
-                    min_value=-3.0,
-                    max_value=3.0,
-                    value=0.0,
-                    step=0.1,
-                    key=f"stock_level_{st.session_state.rep_level}",
-                    help="Positive = long stock, Negative = short stock"
-                )
-                st.caption(f"{stock_qty:.1f} shares")
-                if stock_qty != 0:
-                    user_positions.append({'type': 'stock', 'K': 0, 'q': stock_qty})
-            
-            st.markdown("#### 📞 Call Options")
-        
-        # Call options
-        strikes_per_row = 5
-        n_rows = (n_strikes + strikes_per_row - 1) // strikes_per_row
-        
-        for row in range(n_rows):
-            cols = st.columns(strikes_per_row)
-            for col_idx in range(strikes_per_row):
-                strike_idx = row * strikes_per_row + col_idx
-                if strike_idx < n_strikes:
-                    K = strikes[strike_idx]
-                    with cols[col_idx]:
-                        q = st.slider(
-                            f"K=${K}",
-                            min_value=-3.0,
-                            max_value=3.0,
-                            value=0.0,
-                            step=0.1,
-                            key=f"call_{K}_level_{st.session_state.rep_level}",
-                            label_visibility="visible"
-                        )
-                        if q != 0:
-                            st.caption(f"{q:+.1f}")
-                            user_positions.append({'type': 'call', 'K': K, 'q': q})
-                        else:
-                            st.caption("—")
+    # Use subset of strikes
+    active_strikes = strikes[:n_strikes_to_use]
     
-    # Calculate user portfolio payoff
-    user_payoff = portfolio_payoff(S, user_positions)
+    # Compute optimal replication for this subset
+    optimal_weights = compute_static_replication(
+        target_payoff, S, active_strikes, option_type='call'
+    )
     
-    # Calculate error metric
-    error = np.sqrt(np.mean((target_payoff - user_payoff)**2))
-    max_error = np.sqrt(np.mean(target_payoff**2))
-    accuracy = max(0, 100 * (1 - error / max_error)) if max_error > 0 else 0
+    user_positions = [
+        {'type': 'call', 'K': K, 'q': optimal_weights[K]} 
+        for K in active_strikes
+    ]
+    
+    st.markdown(f"**Using {n_strikes_to_use} strikes:** {active_strikes[:3]}...{active_strikes[-1] if len(active_strikes) > 3 else ''}")
+        
+else:
+    # Interactive mode - user adjusts quantities
+    st.markdown("### 🔧 Build Your Replicating Portfolio")
+    
+    with st.expander("💡 Hint", expanded=False):
+        st.markdown(current_level['hint'])
+    
+    # Create columns for strike inputs
+    strikes = current_level['strikes']
+    n_strikes = len(strikes)
+    allow_stock = current_level.get('allow_stock', False)
+    
+    user_positions = []
+    
+    if allow_stock:
+        # Add stock and cash position inputs first
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 💵 Cash Position")
+            cash_qty = st.slider(
+                "Cash Amount ($)",
+                min_value=-200.0,
+                max_value=200.0,
+                value=0.0,
+                step=10.0,
+                key=f"cash_level_{st.session_state.rep_level}",
+                help="Add or subtract a constant amount to the entire payoff"
+            )
+            st.caption(f"${cash_qty:.0f}")
+            if cash_qty != 0:
+                user_positions.append({'type': 'cash', 'K': 0, 'q': cash_qty})
+        
+        with col2:
+            st.markdown("#### 📊 Stock Position")
+            stock_qty = st.slider(
+                "Quantity of Stock",
+                min_value=-3.0,
+                max_value=3.0,
+                value=0.0,
+                step=0.1,
+                key=f"stock_level_{st.session_state.rep_level}",
+                help="Positive = long stock, Negative = short stock"
+            )
+            st.caption(f"{stock_qty:.1f} shares")
+            if stock_qty != 0:
+                user_positions.append({'type': 'stock', 'K': 0, 'q': stock_qty})
+        
+        st.markdown("#### 📞 Call Options")
+    
+    # Call options
+    strikes_per_row = 5
+    n_rows = (n_strikes + strikes_per_row - 1) // strikes_per_row
+    
+    for row in range(n_rows):
+        cols = st.columns(strikes_per_row)
+        for col_idx in range(strikes_per_row):
+            strike_idx = row * strikes_per_row + col_idx
+            if strike_idx < n_strikes:
+                K = strikes[strike_idx]
+                with cols[col_idx]:
+                    q = st.slider(
+                        f"K=${K}",
+                        min_value=-3.0,
+                        max_value=3.0,
+                        value=0.0,
+                        step=0.1,
+                        key=f"call_{K}_level_{st.session_state.rep_level}",
+                        label_visibility="visible"
+                    )
+                    if q != 0:
+                        st.caption(f"{q:+.1f}")
+                        user_positions.append({'type': 'call', 'K': K, 'q': q})
+                    else:
+                        st.caption("—")
+
+# Calculate user portfolio payoff
+user_payoff = portfolio_payoff(S, user_positions)
+
+# Calculate error metric
+error = np.sqrt(np.mean((target_payoff - user_payoff)**2))
+max_error = np.sqrt(np.mean(target_payoff**2))
+accuracy = max(0, 100 * (1 - error / max_error)) if max_error > 0 else 0
+
+st.markdown("---")
+
+# Visualization
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    st.markdown("### 📊 Payoff Diagram")
+    
+    fig = go.Figure()
+    
+    # Target payoff
+    fig.add_trace(go.Scatter(
+        x=S, 
+        y=target_payoff,
+        name='🎯 Target Payoff',
+        line=dict(color='rgba(200, 200, 200, 0.8)', width=4, dash='dash'),
+        hovertemplate='S=%{x:.0f}<br>Target=%{y:.2f}<extra></extra>'
+    ))
+    
+    # User portfolio
+    fig.add_trace(go.Scatter(
+        x=S,
+        y=user_payoff,
+        name='🛠️ Your Portfolio',
+        line=dict(color='royalblue', width=3),
+        hovertemplate='S=%{x:.0f}<br>Your Payoff=%{y:.2f}<extra></extra>'
+    ))
+    
+    # Error area (filled)
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([S, S[::-1]]),
+        y=np.concatenate([target_payoff, user_payoff[::-1]]),
+        fill='toself',
+        fillcolor='rgba(255, 100, 100, 0.2)',
+        line=dict(width=0),
+        name='Replication Error',
+        showlegend=True,
+        hoverinfo='skip'
+    ))
+    
+    # Add strike markers with color coding for active positions
+    active_strikes = {p['K'] for p in user_positions if p['type'] == 'call' and abs(p['q']) > 0.01}
+    for K in strikes:
+        if K in active_strikes:
+            fig.add_vline(
+                x=K,
+                line_dash="dash",
+                line_color="royalblue",
+                opacity=0.6,
+                annotation_text=f"K={K}",
+                annotation_position="top"
+            )
+        else:
+            fig.add_vline(
+                x=K,
+                line_dash="dot",
+                line_color="lightgray",
+                opacity=0.2
+            )
+    
+    fig.update_layout(
+        xaxis_title="Stock Price at Expiration ($)",
+        yaxis_title="Payoff ($)",
+        hovermode='x unified',
+        template="plotly_dark",
+        height=500,
+        showlegend=True,
+        legend=dict(x=0.02, y=0.98),
+        plot_bgcolor='rgba(50,50,60,0.8)',
+        paper_bgcolor='rgba(38,39,48,0.5)',
+        font=dict(color='#ffffff'),
+        xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.1)')
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+with col2:
+    st.markdown("### 📈 Replication Quality")
+    
+    # Create circular gauge for accuracy
+    import plotly.graph_objects as go
+    
+    gauge_fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=accuracy,
+        domain={'x': [0, 1], 'y': [0, 1]},
+        number={'suffix': "%", 'font': {'size': 40}},
+        gauge={
+            'axis': {'range': [None, 100], 'tickwidth': 1},
+            'bar': {'color': "royalblue"},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "gray",
+            'steps': [
+                {'range': [0, 70], 'color': '#ffebee'},
+                {'range': [70, 90], 'color': '#fff9c4'},
+                {'range': [90, 100], 'color': '#e8f5e9'}],
+            'threshold': {
+                'line': {'color': "green", 'width': 4},
+                'thickness': 0.75,
+                'value': 95}}
+    ))
+    
+    gauge_fig.update_layout(
+        height=250,
+        margin=dict(l=20, r=20, t=40, b=20),
+        title={'text': "Accuracy Score", 'x': 0.5, 'xanchor': 'center'}
+    )
+    
+    st.plotly_chart(gauge_fig, use_container_width=True)
     
     st.markdown("---")
     
-    # Visualization
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("### 📊 Payoff Diagram")
-        
-        fig = go.Figure()
-        
-        # Target payoff
-        fig.add_trace(go.Scatter(
-            x=S, 
-            y=target_payoff,
-            name='🎯 Target Payoff',
-            line=dict(color='rgba(200, 200, 200, 0.8)', width=4, dash='dash'),
-            hovertemplate='S=%{x:.0f}<br>Target=%{y:.2f}<extra></extra>'
-        ))
-        
-        # User portfolio
-        fig.add_trace(go.Scatter(
-            x=S,
-            y=user_payoff,
-            name='🛠️ Your Portfolio',
-            line=dict(color='royalblue', width=3),
-            hovertemplate='S=%{x:.0f}<br>Your Payoff=%{y:.2f}<extra></extra>'
-        ))
-        
-        # Error area (filled)
-        fig.add_trace(go.Scatter(
-            x=np.concatenate([S, S[::-1]]),
-            y=np.concatenate([target_payoff, user_payoff[::-1]]),
-            fill='toself',
-            fillcolor='rgba(255, 100, 100, 0.2)',
-            line=dict(width=0),
-            name='Replication Error',
-            showlegend=True,
-            hoverinfo='skip'
-        ))
-        
-        # Add strike markers with color coding for active positions
-        active_strikes = {p['K'] for p in user_positions if p['type'] == 'call' and abs(p['q']) > 0.01}
-        for K in strikes:
-            if K in active_strikes:
-                fig.add_vline(
-                    x=K,
-                    line_dash="dash",
-                    line_color="royalblue",
-                    opacity=0.6,
-                    annotation_text=f"K={K}",
-                    annotation_position="top"
-                )
-            else:
-                fig.add_vline(
-                    x=K,
-                    line_dash="dot",
-                    line_color="lightgray",
-                    opacity=0.2
-                )
-        
-        fig.update_layout(
-            xaxis_title="Stock Price at Expiration ($)",
-            yaxis_title="Payoff ($)",
-            hovermode='x unified',
-            template="plotly_dark",
-            height=500,
-            showlegend=True,
-            legend=dict(x=0.02, y=0.98),
-            plot_bgcolor='rgba(50,50,60,0.8)',
-            paper_bgcolor='rgba(38,39,48,0.5)',
-            font=dict(color='#ffffff'),
-            xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-            yaxis=dict(gridcolor='rgba(255,255,255,0.1)')
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        st.markdown("### 📈 Replication Quality")
-        
-        # Create circular gauge for accuracy
-        import plotly.graph_objects as go
-        
-        gauge_fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=accuracy,
-            domain={'x': [0, 1], 'y': [0, 1]},
-            number={'suffix': "%", 'font': {'size': 40}},
-            gauge={
-                'axis': {'range': [None, 100], 'tickwidth': 1},
-                'bar': {'color': "royalblue"},
-                'bgcolor': "white",
-                'borderwidth': 2,
-                'bordercolor': "gray",
-                'steps': [
-                    {'range': [0, 70], 'color': '#ffebee'},
-                    {'range': [70, 90], 'color': '#fff9c4'},
-                    {'range': [90, 100], 'color': '#e8f5e9'}],
-                'threshold': {
-                    'line': {'color': "green", 'width': 4},
-                    'thickness': 0.75,
-                    'value': 95}}
-        ))
-        
-        gauge_fig.update_layout(
-            height=250,
-            margin=dict(l=20, r=20, t=40, b=20),
-            title={'text': "Accuracy Score", 'x': 0.5, 'xanchor': 'center'}
-        )
-        
-        st.plotly_chart(gauge_fig, use_container_width=True)
-        
-        st.markdown("---")
-        
-        # Feedback (only for interactive mode)
-        if current_level['mode'] == 'interactive':
-            if accuracy >= 98:
-                st.success("🎉 **Excellent!** Perfect replication!")
-                st.balloons()
-            elif accuracy >= 90:
-                st.success("✅ **Great!** Very close match!")
-            elif accuracy >= 70:
-                st.warning("🤏 **Good progress!** Keep adjusting...")
-            else:
-                st.info("💪 **Keep trying!** Adjust the quantities.")
+    # Feedback (only for interactive mode)
+    if current_level['mode'] == 'interactive':
+        if accuracy >= 98:
+            st.success("🎉 **Excellent!** Perfect replication!")
+            st.balloons()
+        elif accuracy >= 90:
+            st.success("✅ **Great!** Very close match!")
+        elif accuracy >= 70:
+            st.warning("🤏 **Good progress!** Keep adjusting...")
         else:
-            # Animation mode - show informative message
-            if accuracy >= 95:
-                st.success("✨ **Excellent approximation!** With enough strikes, we get nearly perfect replication.")
-            elif accuracy >= 80:
-                st.info("📈 **Good approximation.** Add more strikes to improve further!")
-            else:
-                st.warning("⚠️ **Rough approximation.** Try adding more strikes using the slider above.")
-        
-        st.markdown("---")
-        
-        # Portfolio composition visualization
-        st.markdown("**Portfolio Composition:**")
-        
-        # Count position types
-        call_positions = [p for p in user_positions if p['type'] == 'call' and abs(p['q']) > 0.01]
-        has_stock = any(p['type'] == 'stock' and abs(p['q']) > 0.01 for p in user_positions)
-        has_cash = any(p['type'] == 'cash' and abs(p['q']) > 0.01 for p in user_positions)
-        
-        # Create composition indicator
-        comp_cols = st.columns([1, 1, 1])
-        with comp_cols[0]:
-            if has_stock:
-                st.success("✓ Stock")
-            else:
-                st.info("○ Stock")
-        with comp_cols[1]:
-            if has_cash:
-                st.success("✓ Cash")
-            else:
-                st.info("○ Cash")
-        with comp_cols[2]:
-            if call_positions:
-                st.success(f"✓ {len(call_positions)} Call(s)")
-            else:
-                st.info("○ Calls")
-        
-        st.markdown("**Position Details:**")
-        active_positions = [p for p in user_positions if abs(p['q']) > 0.01]
-        if active_positions:
-            if current_level['mode'] == 'animation':
-                st.markdown(f"*Showing optimal weights for {len(active_positions)} strikes*")
-                if len(active_positions) <= 8:
-                    for p in active_positions:
-                        sign = "+" if p['q'] > 0 else ""
-                        if p['type'] == 'stock':
-                            st.markdown(f"- {sign}{p['q']:.1f} × Stock")
-                        elif p['type'] == 'cash':
-                            st.markdown(f"- ${p['q']:.0f} Cash")
-                        else:
-                            st.markdown(f"- {sign}{p['q']:.1f} × Call(K=${p['K']})")
-                else:
-                    st.markdown(f"*{len(active_positions)} positions (see weights in chart)*")
-            else:
+            st.info("💪 **Keep trying!** Adjust the quantities.")
+    else:
+        # Animation mode - show informative message
+        if accuracy >= 95:
+            st.success("✨ **Excellent approximation!** With enough strikes, we get nearly perfect replication.")
+        elif accuracy >= 80:
+            st.info("📈 **Good approximation.** Add more strikes to improve further!")
+        else:
+            st.warning("⚠️ **Rough approximation.** Try adding more strikes using the slider above.")
+    
+    st.markdown("---")
+    
+    # Portfolio composition visualization
+    st.markdown("**Portfolio Composition:**")
+    
+    # Count position types
+    call_positions = [p for p in user_positions if p['type'] == 'call' and abs(p['q']) > 0.01]
+    has_stock = any(p['type'] == 'stock' and abs(p['q']) > 0.01 for p in user_positions)
+    has_cash = any(p['type'] == 'cash' and abs(p['q']) > 0.01 for p in user_positions)
+    
+    # Create composition indicator
+    comp_cols = st.columns([1, 1, 1])
+    with comp_cols[0]:
+        if has_stock:
+            st.success("✓ Stock")
+        else:
+            st.info("○ Stock")
+    with comp_cols[1]:
+        if has_cash:
+            st.success("✓ Cash")
+        else:
+            st.info("○ Cash")
+    with comp_cols[2]:
+        if call_positions:
+            st.success(f"✓ {len(call_positions)} Call(s)")
+        else:
+            st.info("○ Calls")
+    
+    st.markdown("**Position Details:**")
+    active_positions = [p for p in user_positions if abs(p['q']) > 0.01]
+    if active_positions:
+        if current_level['mode'] == 'animation':
+            st.markdown(f"*Showing optimal weights for {len(active_positions)} strikes*")
+            if len(active_positions) <= 8:
                 for p in active_positions:
                     sign = "+" if p['q'] > 0 else ""
                     if p['type'] == 'stock':
@@ -605,59 +610,70 @@ else:
                         st.markdown(f"- ${p['q']:.0f} Cash")
                     else:
                         st.markdown(f"- {sign}{p['q']:.1f} × Call(K=${p['K']})")
-        else:
-            st.markdown("*No positions yet*")
-        
-        st.markdown("---")
-        
-        # Show solution button (only in interactive mode and for call-only levels)
-        if current_level['mode'] == 'interactive':
-            if current_level.get('allow_stock', False):
-                st.info("💡 **Hint:** For this payoff, the natural solution uses puts (or equivalently, stock + calls). The exact combination depends on your approach!")
             else:
-                if st.button("💡 Show Theoretical Solution", use_container_width=True):
-                    st.session_state.rep_show_solution = True
+                st.markdown(f"*{len(active_positions)} positions (see weights in chart)*")
         else:
-            st.info("💡 **Note:** Move the slider to see how more strikes improve the approximation!")
+            for p in active_positions:
+                sign = "+" if p['q'] > 0 else ""
+                if p['type'] == 'stock':
+                    st.markdown(f"- {sign}{p['q']:.1f} × Stock")
+                elif p['type'] == 'cash':
+                    st.markdown(f"- ${p['q']:.0f} Cash")
+                else:
+                    st.markdown(f"- {sign}{p['q']:.1f} × Call(K=${p['K']})")
+    else:
+        st.markdown("*No positions yet*")
     
-    # Show solution if requested
-    if st.session_state.rep_show_solution and current_level['mode'] == 'interactive':
-        st.markdown("---")
-        st.markdown("### 🎓 Theoretical Solution")
+    st.markdown("---")
+    
+    # Show solution button (only in interactive mode and for call-only levels)
+    if current_level['mode'] == 'interactive':
+        if current_level.get('allow_stock', False):
+            st.info("💡 **Hint:** For this payoff, the natural solution uses puts (or equivalently, stock + calls). The exact combination depends on your approach!")
+        else:
+            if st.button("💡 Show Theoretical Solution", use_container_width=True):
+                st.session_state.rep_show_solution = True
+    else:
+        st.info("💡 **Note:** Move the slider to see how more strikes improve the approximation!")
+
+# Show solution if requested
+if st.session_state.rep_show_solution and current_level['mode'] == 'interactive':
+    st.markdown("---")
+    st.markdown("### 🎓 Theoretical Solution")
+    
+    # Compute optimal replication
+    optimal_weights = compute_static_replication(
+        target_payoff, S, strikes, option_type='call'
+    )
+    
+    optimal_positions = [
+        {'type': 'call', 'K': K, 'q': w} 
+        for K, w in optimal_weights.items()
+    ]
+    optimal_payoff = portfolio_payoff(S, optimal_positions)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Optimal Weights:**")
+        for K, w in sorted(optimal_weights.items()):
+            if abs(w) > 0.01:
+                sign = "+" if w > 0 else ""
+                st.markdown(f"- {sign}{w:.3f} × Call(K=${K})")
+    
+    with col2:
+        st.markdown("**Key Insight:**")
+        st.info("""
+        The weights are determined by the **second derivative** of the target payoff.
         
-        # Compute optimal replication
-        optimal_weights = compute_static_replication(
-            target_payoff, S, strikes, option_type='call'
-        )
+        This is the **Breeden-Litzenberger formula**:
         
-        optimal_positions = [
-            {'type': 'call', 'K': K, 'q': w} 
-            for K, w in optimal_weights.items()
-        ]
-        optimal_payoff = portfolio_payoff(S, optimal_positions)
+        Any payoff f(S) can be written as:
         
-        col1, col2 = st.columns(2)
+        $$f(S) = \\int_0^\\infty f''(K) \\cdot (S-K)^+ dK$$
         
-        with col1:
-            st.markdown("**Optimal Weights:**")
-            for K, w in sorted(optimal_weights.items()):
-                if abs(w) > 0.01:
-                    sign = "+" if w > 0 else ""
-                    st.markdown(f"- {sign}{w:.3f} × Call(K=${K})")
-        
-        with col2:
-            st.markdown("**Key Insight:**")
-            st.info("""
-            The weights are determined by the **second derivative** of the target payoff.
-            
-            This is the **Breeden-Litzenberger formula**:
-            
-            Any payoff f(S) can be written as:
-            
-            $$f(S) = \\int_0^\\infty f''(K) \\cdot (S-K)^+ dK$$
-            
-            In practice, we use discrete strikes as an approximation.
-            """)
+        In practice, we use discrete strikes as an approximation.
+        """)
     
     # Pricing illustration
     if current_level['mode'] == 'interactive' and len([p for p in user_positions if abs(p['q']) > 0.01]) > 0:
@@ -825,3 +841,9 @@ else:
         
         As $\Delta K \to 0$, the approximation becomes exact!
         """)
+
+# Back to Home button at the bottom
+st.markdown("---")
+st.markdown("---")
+if st.button("🏠 Back to Main Home Page", use_container_width=True, type="secondary", key="back_to_home_bottom"):
+    st.switch_page("Home.py")
