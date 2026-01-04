@@ -1,0 +1,58 @@
+{
+  "periods": {
+    "crisis_2008": {
+      "file": "data/raw/crisis_2008.csv",
+      "name": "2008 Financial Crisis",
+      "regime": "crisis",
+      "start": "2007-09-01",
+      "end": "2009-06-30",
+      "ticker": "SPY",
+      "description": "Subprime mortgage crisis and market collapse, followed by recovery"
+    },
+    "covid_2020": {
+      "file": "data/raw/covid_2020.csv",
+      "name": "COVID-19 Crash & Recovery",
+      "regime": "mixed",
+      "start": "2020-01-01",
+      "end": "2021-12-31",
+      "ticker": "SPY",
+      "description": "Pandemic-induced crash in March 2020 followed by rapid bull market recovery"
+    },
+    "stability_2004": {
+      "file": "data/raw/stability_2004.csv",
+      "name": "Pre-Crisis Stability (2004-2006)",
+      "regime": "stability",
+      "start": "2004-01-01",
+      "end": "2006-12-31",
+      "ticker": "SPY",
+      "description": "Calm period before the 2008 financial crisis, housing bubble build-up"
+    },
+    "black_monday_1987": {
+      "file": "data/raw/black_monday_1987.csv",
+      "name": "Black Monday 1987",
+      "regime": "crisis",
+      "start": "1987-08-01",
+      "end": "1987-12-31",
+      "ticker": "^GSPC",
+      "description": "Historic single-day market crash on October 19, 1987"
+    },
+    "bear_2022": {
+      "file": "data/raw/bear_2022.csv",
+      "name": "2022 Inflation Bear Market",
+      "regime": "crisis",
+      "start": "2022-01-01",
+      "end": "2022-10-31",
+      "ticker": "SPY",
+      "description": "Bear market driven by inflation concerns and Federal Reserve rate hikes"
+    },
+    "dotcom_boom": {
+      "file": "data/raw/dotcom_boom.csv",
+      "name": "Dot-Com Boom & Bust",
+      "regime": "mixed",
+      "start": "1998-01-01",
+      "end": "2002-12-31",
+      "ticker": "^IXIC",
+      "description": "Tech bubble inflation and subsequent crash"
+    }
+  }
+}
