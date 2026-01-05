@@ -4,6 +4,7 @@ Can you distinguish real market data from synthetic stochastic processes?
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
@@ -21,6 +22,18 @@ from utils.data_loader import (
     extract_price_series,
     get_periods_by_regime
 )
+
+# Scroll to top if flag is set
+if st.session_state.get('scroll_to_top', False):
+    components.html(
+        """
+        <script>
+            window.parent.document.querySelector('section.main').scrollTo(0, 0);
+        </script>
+        """,
+        height=0,
+    )
+    st.session_state.scroll_to_top = False
 
 # Color scheme
 COLOR_REAL = "#4ECDC4"  # Turquoise
@@ -634,7 +647,21 @@ with st.expander("📚 Understanding Stochastic Price Processes"):
     - Market microstructure and high-frequency data
     """)
 
-# Footer
+# Navigation buttons at the bottom
 st.markdown("---")
-if st.button("🏠 Back to Home"):
-    st.switch_page("Home.py")
+st.markdown("---")
+
+bottom_col1, bottom_col2 = st.columns(2)
+
+with bottom_col1:
+    if st.button("🔄 Play Again", use_container_width=True, type="primary", key="play_again_bottom"):
+        st.session_state.game_started = False
+        st.session_state.game_data = None
+        st.session_state.user_guesses = {}
+        st.session_state.revealed = False
+        st.session_state.scroll_to_top = True
+        st.rerun()
+
+with bottom_col2:
+    if st.button("🏠 Back to Main Home Page", use_container_width=True, type="secondary", key="back_to_home_bottom"):
+        st.switch_page("Home.py")

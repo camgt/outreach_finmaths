@@ -3,6 +3,7 @@ Static Replication Game
 Learn how any European option payoff can be replicated using vanilla calls and puts.
 """
 import streamlit as st
+import streamlit.components.v1 as components
 import numpy as np
 import plotly.graph_objects as go
 from utils.option_math import (
@@ -16,6 +17,18 @@ st.set_page_config(
     page_icon="🛠️",
     layout="wide"
 )
+
+# Scroll to top if flag is set
+if st.session_state.get('scroll_to_top', False):
+    components.html(
+        """
+        <script>
+            window.parent.document.querySelector('section.main').scrollTo(0, 0);
+        </script>
+        """,
+        height=0,
+    )
+    st.session_state.scroll_to_top = False
 
 # Initialize session state
 if 'rep_game_started' not in st.session_state:
@@ -842,8 +855,20 @@ if st.session_state.rep_show_solution and current_level['mode'] == 'interactive'
         As $\Delta K \to 0$, the approximation becomes exact!
         """)
 
-# Back to Home button at the bottom
+# Navigation buttons at the bottom
 st.markdown("---")
 st.markdown("---")
-if st.button("🏠 Back to Main Home Page", use_container_width=True, type="secondary", key="back_to_home_bottom"):
-    st.switch_page("Home.py")
+
+bottom_col1, bottom_col2 = st.columns(2)
+
+with bottom_col1:
+    if st.button("🔄 Play Again", use_container_width=True, type="primary", key="play_again_bottom"):
+        st.session_state.rep_game_started = False
+        st.session_state.rep_level = 1
+        st.session_state.rep_show_solution = False
+        st.session_state.scroll_to_top = True
+        st.rerun()
+
+with bottom_col2:
+    if st.button("🏠 Back to Main Home Page", use_container_width=True, type="secondary", key="back_to_home_bottom"):
+        st.switch_page("Home.py")
